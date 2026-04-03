@@ -1,0 +1,17 @@
+CLAUDE.md
+
+# Media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.svg
+*.ico
+*.mp4
+*.mp3
+*.wav
+*.mov
+*.avi
+*.mkv
+*.pdf
