@@ -1,135 +1,67 @@
 (function() {
-    const baseUrl = `/`; 
-    const version = Date.now();
-
-    const headerElement = document.getElementById('header');
-    const originalContent = Array.from(headerElement.children).filter(el => 
-        el.tagName !== 'SCRIPT' || el.src !== '../assets/js/pageEnhancer.js' // 排除 pageEnhancer.js 本身
-    );
+    // 部署時更新此版本號以強制瀏覽器刷新快取，避免每次頁面載入都重新下載
+    const VERSION = '1.0.0';
 
     loadHeader();
-    handleImageLoading();
 
-    function loadHeader() {
-        fetch(`${baseUrl}assets/template/header.html`)
-        .then(response => response.text())
-        .then(data => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(data, 'text/html');
-
-            const links = doc.querySelectorAll('link');
-            links.forEach(link => {
-                const newLink = document.createElement('link');
-                newLink.href = link.href + `?v=${version}`;
-                newLink.rel = link.rel;
-                headerElement.appendChild(newLink);
-            });
-
-            const scripts = Array.from(doc.querySelectorAll('script'));
-            const scriptSrcs = scripts
-                .map(script => script.src ? `${script.src}?v=${version}` : null)
-                .filter(src => src);
-
-            return scriptSrcs.reduce((promise, src) => {
-                return promise.then(() => {
-                    return new Promise((resolve, reject) => {
-                        const script = document.createElement('script');
-                        script.src = src;
-                        script.onload = resolve;
-                        script.onerror = reject;
-                        headerElement.appendChild(script);
-                    });
-                });
-            }, Promise.resolve()).then(() => {
-                const inlineScripts = scripts.filter(script => !script.src);
-                inlineScripts.forEach(script => {
-                    const newScript = document.createElement('script');
-                    newScript.textContent = script.textContent;
-                    headerElement.appendChild(newScript);
-                });
-            });
-        })
-        .catch(error => console.error('載入 header 失敗:', error));
-    }
-
-    function handleImageLoading() {
-        document.addEventListener('DOMContentLoaded', () => {
-            const images = document.querySelectorAll('img');
-            if (images.length === 0) {
-                document.body.style.display = 'block';
-            } else {
-                let loadedCount = 0;
-                images.forEach(img => {
-                    if (img.complete) {
-                        loadedCount++;
-                        if (loadedCount === images.length) {
-                            document.body.style.transition = 'opacity 0.5s';
-                            document.body.style.opacity = '0';
-                            document.body.style.display = 'block';
-                            setTimeout(() => document.body.style.opacity = '1', 10);
-                        }
-                    } else {
-                        img.addEventListener('load', () => {
-                            loadedCount++;
-                            if (loadedCount === images.length) {
-                                document.body.style.transition = 'opacity 0.5s';
-                                document.body.style.opacity = '0';
-                                document.body.style.display = 'block';
-                                setTimeout(() => document.body.style.opacity = '1', 10);
-                            }
-                        });
-                        img.addEventListener('error', () => {
-                            loadedCount++;
-                            if (loadedCount === images.length) {
-                                document.body.style.transition = 'opacity 0.5s';
-                                document.body.style.opacity = '0';
-                                document.body.style.display = 'block';
-                                setTimeout(() => document.body.style.opacity = '1', 10);
-                            }
-                        });
-                    }
-                });
-            }
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
         });
     }
-	
-	document.addEventListener('DOMContentLoaded', () => {
-		const images = document.querySelectorAll('img');
-		if (images.length === 0) {
-			document.body.style.display = 'block';
-		} else {
-			let loadedCount = 0;
-			images.forEach(img => {
-				if (img.complete) {
-					loadedCount++;
-					if (loadedCount === images.length) {
-						document.body.style.transition = 'opacity 0.5s';
-						document.body.style.opacity = '0';
-						document.body.style.display = 'block';
-						setTimeout(() => document.body.style.opacity = '1', 10);
-					}
-				} else {
-					img.addEventListener('load', () => {
-						loadedCount++;
-						if (loadedCount === images.length) {
-							document.body.style.transition = 'opacity 0.5s';
-							document.body.style.opacity = '0';
-							document.body.style.display = 'block';
-							setTimeout(() => document.body.style.opacity = '1', 10);
-						}
-					});
-					img.addEventListener('error', () => {
-						loadedCount++;
-						if (loadedCount === images.length) {
-							document.body.style.transition = 'opacity 0.5s';
-							document.body.style.opacity = '0';
-							document.body.style.display = 'block';
-							setTimeout(() => document.body.style.opacity = '1', 10);
-						}
-					});
-				}
-			});
-		}
-	});
+
+    function loadHeader() {
+        fetch('/assets/template/header.html')
+            .then(res => res.text())
+            .then(html => {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const scripts = Array.from(doc.querySelectorAll('script[src]'));
+
+                // 按 data-group 分組：同組平行載入，組間依序執行
+                const groups = {};
+                scripts.forEach(s => {
+                    const g = s.dataset.group || '1';
+                    if (!groups[g]) groups[g] = [];
+                    groups[g].push(s.src + `?v=${VERSION}`);
+                });
+
+                return Object.keys(groups).sort().reduce(async (prev, groupKey) => {
+                    await prev;
+                    return Promise.all(groups[groupKey].map(loadScript));
+                }, Promise.resolve());
+            })
+            .catch(err => console.error('載入 header 失敗:', err));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const images = document.querySelectorAll('img');
+
+        if (images.length === 0) {
+            revealPage();
+            return;
+        }
+
+        let loadedCount = 0;
+        function onSettle() {
+            if (++loadedCount === images.length) revealPage();
+        }
+
+        images.forEach(img => {
+            if (img.complete) {
+                onSettle();
+            } else {
+                img.addEventListener('load', onSettle);
+                img.addEventListener('error', onSettle);
+            }
+        });
+    });
+
+    function revealPage() {
+        document.body.style.opacity = '1';
+    }
 
 })();

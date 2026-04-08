@@ -1,11 +1,7 @@
-<link href="../assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-<link href="../assets/css/style.css" rel="stylesheet">
-<link href="../assets/css/responsive.css" rel="stylesheet">
-<link href="../assets/css/fonts.css" rel="stylesheet">
-
-<script defer src="../assets/plugins/jquery.min.js"></script>
-<script defer src="../assets/plugins/lodash.min.js"></script>
-<script defer src="../assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script defer src="../assets/plugins/handlebars.min.js"></script>
-<script defer src="../assets/data/data.js"></script>
-<script defer src="../assets/js/main.js"></script>
+<!-- group="1" 內的 script 平行載入，group="2" 在 group="1" 全部完成後才載入 -->
+<script src="/assets/plugins/jquery.min.js" data-group="1"></script>
+<script src="/assets/plugins/lodash.min.js" data-group="1"></script>
+<script src="/assets/plugins/bootstrap/js/bootstrap.bundle.min.js" data-group="1"></script>
+<script src="/assets/plugins/handlebars.min.js" data-group="1"></script>
+<script src="/assets/data/data.js" data-group="1"></script>
+<script src="/assets/js/main.js" data-group="2"></script>

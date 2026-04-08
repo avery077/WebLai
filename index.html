@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebLai</title>
+
+    <!-- CSS 直接放在 <head>，不經 JS 載入，避免渲染阻塞 -->
+    <link rel="stylesheet" href="assets/plugins/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+    <link rel="stylesheet" href="assets/css/fonts.css">
+
+    <!-- 預載提示：讓瀏覽器提前下載關鍵 script，減少 pageEnhancer 執行後的等待時間 -->
+    <link rel="preload" href="assets/plugins/jquery.min.js" as="script">
+    <link rel="preload" href="assets/plugins/handlebars.min.js" as="script">
+    <link rel="preload" href="assets/data/data.js" as="script">
+</head>
+<body>
+    <div id="menu"></div>
+
+    <!-- 頁面主要內容區 -->
+
+    <div id="footer"></div>
+
+    <!--
+        圖片建議加上 loading="lazy" 及明確的 width/height，
+        避免 layout shift（CLS）並延後載入非首屏圖片。
+        例：<img src="..." alt="..." loading="lazy" width="800" height="600">
+    -->
+
+    <!-- pageEnhancer 放在 body 末端，確保 DOM 就緒後才執行 -->
+    <script src="assets/js/pageEnhancer.js"></script>
+</body>
+</html>
